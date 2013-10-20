@@ -1,6 +1,7 @@
 package stun_test
 
 import (
+  "bytes"
   "fmt"
   . "stun"
   "testing"
@@ -26,9 +27,27 @@ func TestNewHeader(t *testing.T) {
   }
 }
 
+func TestSerializeHeader(t *testing.T) {
+  header := NewHeader(RequestClass)
+  header.TransactionId = fakeTransactionId()
+  buffer := header.Serialize()
+
+  matching_buffer := []byte{
+      0,   1,   0,   0, // Class ^ Method, Length
+     33,  18, 164,  66, // MagicCookie
+      0,   0,   0,   1, // TransactionId
+      0,   0,   0,   2,
+      0,   0,   0,   3,
+  }
+
+  if !bytes.Equal(buffer, matching_buffer) {
+    t.Errorf(`header.Serialize() = %X, want %X`, buffer, matching_buffer)
+  }
+}
+
 func ExampleMessage() {
   header := NewHeader(RequestClass)
-  header.TransactionId = []uint32{1, 2, 3}
+  header.TransactionId = fakeTransactionId()
 
   attributes := make([]Attribute, 3)
 
@@ -70,4 +89,8 @@ func ExampleMessage() {
   // message.Attributes[2].Type: type
   // message.Attributes[2].Length: 2
   // message.Attributes[2].Value: value
+}
+
+func fakeTransactionId() [3]uint32 {
+  return [3]uint32{1, 2, 3}
 }
