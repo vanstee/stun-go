@@ -1,5 +1,9 @@
 package stun
 
+import (
+  "math/rand"
+)
+
 const (
   RequestClass = 0x0000
   IndicationClass = 0x0010
@@ -15,7 +19,7 @@ type Header struct {
   Class uint16
   Method uint16
   MagicCookie uint32
-  TransactionId string
+  TransactionId []uint32
 }
 
 type Attribute struct {
@@ -27,4 +31,21 @@ type Attribute struct {
 type Message struct {
   Header Header
   Attributes []Attribute
+}
+
+func NewHeader(class uint16) Header {
+  return Header{
+    Class: class,
+    Method: BindingMethod,
+    MagicCookie: MagicCookie,
+    TransactionId: generateTransactionId(),
+  }
+}
+
+func generateTransactionId() []uint32 {
+  return []uint32{
+    rand.Uint32(),
+    rand.Uint32(),
+    rand.Uint32(),
+  }
 }
