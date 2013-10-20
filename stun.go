@@ -25,13 +25,6 @@ type Header struct {
   TransactionId [3]uint32
 }
 
-type SerializedHeader struct {
-  Type uint16
-  Length uint16
-  MagicCookie uint32
-  TransactionId [3]uint32
-}
-
 type Attribute struct {
   Type string
   Length int
@@ -47,13 +40,14 @@ func NewHeader(class uint16) Header {
   return Header{
     Class: class,
     Method: BindingMethod,
+    Length: 0,
     MagicCookie: MagicCookie,
     TransactionId: generateTransactionId(),
   }
 }
 
 func (header Header) Type() uint16 {
-  return header.Class ^ header.Method
+  return header.Class | header.Method
 }
 
 func generateTransactionId() [3]uint32 {
@@ -65,20 +59,10 @@ func generateTransactionId() [3]uint32 {
 }
 
 func (header Header) Serialize() []byte {
-  return NewSerializedHeader(header).Serialize()
-}
-
-func NewSerializedHeader(header Header) SerializedHeader {
-  return SerializedHeader{
-    Type: header.Type(),
-    Length: header.Length,
-    MagicCookie: header.MagicCookie,
-    TransactionId: header.TransactionId,
-  }
-}
-
-func (serializedHeader SerializedHeader) Serialize() []byte {
   buffer := new(bytes.Buffer)
-  binary.Write(buffer, binary.BigEndian, serializedHeader)
+  binary.Write(buffer, binary.BigEndian, header.Type())
+  binary.Write(buffer, binary.BigEndian, header.Length)
+  binary.Write(buffer, binary.BigEndian, header.MagicCookie)
+  binary.Write(buffer, binary.BigEndian, header.TransactionId)
   return buffer.Bytes()
 }

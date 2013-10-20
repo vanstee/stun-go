@@ -33,7 +33,7 @@ func TestSerializeHeader(t *testing.T) {
   buffer := header.Serialize()
 
   matching_buffer := []byte{
-      0,   1,   0,   0, // Class ^ Method, Length
+      0,   1,   0,   0, // Class | Method, Length
      33,  18, 164,  66, // MagicCookie
       0,   0,   0,   1, // TransactionId
       0,   0,   0,   2,
