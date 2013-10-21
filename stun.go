@@ -3,6 +3,7 @@ package stun
 import (
   "bytes"
   "encoding/binary"
+  "math"
   "math/rand"
 )
 
@@ -26,8 +27,8 @@ type Header struct {
 }
 
 type Attribute struct {
-  Type string
-  Length int
+  Type uint16
+  Length uint16
   Value string
 }
 
@@ -64,5 +65,36 @@ func (header Header) Serialize() []byte {
   binary.Write(buffer, binary.BigEndian, header.Length)
   binary.Write(buffer, binary.BigEndian, header.MagicCookie)
   binary.Write(buffer, binary.BigEndian, header.TransactionId)
+  return buffer.Bytes()
+}
+
+func NewAttribute(attributeType uint16, value string) Attribute {
+  return Attribute{
+    Type: attributeType,
+    Length: uint16(len(value)),
+    Value: value,
+  }
+}
+
+func (attribute Attribute) ChunkedValue() []uint32 {
+  sizeOfUint32 := 4
+  words := int(math.Ceil(float64(len(attribute.Value)) / float64(sizeOfUint32)))
+  chunks := make([]uint32, words)
+  bytes := []byte(attribute.Value)
+  bytes = append(bytes, make([]byte, (len(chunks) * sizeOfUint32) - len(bytes))...)
+
+  for i := range chunks {
+    start := sizeOfUint32 * i
+    end := sizeOfUint32 * (i + 1)
+    chunks[i] = binary.LittleEndian.Uint32(bytes[start:end])
+  }
+  return chunks
+}
+
+func (attribute Attribute) Serialize() []byte {
+  buffer := new(bytes.Buffer)
+  binary.Write(buffer, binary.BigEndian, attribute.Type)
+  binary.Write(buffer, binary.BigEndian, attribute.Length)
+  binary.Write(buffer, binary.BigEndian, attribute.ChunkedValue())
   return buffer.Bytes()
 }

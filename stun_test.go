@@ -3,6 +3,7 @@ package stun_test
 import (
   "bytes"
   "fmt"
+  "reflect"
   . "stun"
   "testing"
 )
@@ -45,6 +46,52 @@ func TestSerializeHeader(t *testing.T) {
   }
 }
 
+func TestNewAttribute(t *testing.T) {
+  attribute := NewAttribute(0, "value")
+
+  if attributeType := attribute.Type; attributeType != 0 {
+    t.Errorf(`attribute.Type  = %d, want 0`, attributeType)
+  }
+
+  if length := attribute.Length; length != 5 {
+    t.Errorf(`attribute.Length = %d, want 5`, length)
+  }
+
+  if value := attribute.Value; value != "value" {
+    t.Errorf(`attribute.Value = %s, want "value"`, value)
+  }
+}
+
+func TestChunkedValue(t *testing.T) {
+  attribute := NewAttribute(0, "This is a chunked value")
+  chunks := attribute.ChunkedValue()
+
+  matching_chunks := []uint32{
+    0x73696854, 0x20736920, 0x68632061, 0x656B6E75, 0x61762064, 0x0065756C,
+  }
+
+  if !reflect.DeepEqual(chunks, matching_chunks) {
+    t.Errorf(`attribute.ChunkedValue() = %X, want %X`, chunks, matching_chunks)
+  }
+}
+
+func TestSerializeAttribute(t *testing.T) {
+  attribute := NewAttribute(0, "This is a value")
+  buffer := attribute.Serialize()
+
+  matching_buffer := []byte{
+      0,   0,   0,  15, // Type, Length
+    115, 105, 104,  84, // Value
+     32, 115, 105,  32,
+     97, 118,  32,  97,
+      0, 101, 117, 108,
+  }
+
+  if !bytes.Equal(buffer, matching_buffer) {
+    t.Errorf(`attribute.Serialize() = %v, want %v`, buffer, matching_buffer)
+  }
+}
+
 func ExampleMessage() {
   header := NewHeader(RequestClass)
   header.TransactionId = fakeTransactionId()
@@ -53,8 +100,8 @@ func ExampleMessage() {
 
   for i := range attributes {
     attributes[i] = Attribute{
-      Type: "type",
-      Length: i,
+      Type: 0,
+      Length: 0,
       Value: "value",
     }
   }
@@ -70,7 +117,7 @@ func ExampleMessage() {
   fmt.Printf("message.Header.TransactionId: %d\n", message.Header.TransactionId)
 
   for i := range attributes {
-    fmt.Printf("message.Attributes[%d].Type: %s\n", i, message.Attributes[i].Type)
+    fmt.Printf("message.Attributes[%d].Type: %d\n", i, message.Attributes[i].Type)
     fmt.Printf("message.Attributes[%d].Length: %d\n", i, message.Attributes[i].Length)
     fmt.Printf("message.Attributes[%d].Value: %s\n", i, message.Attributes[i].Value)
   }
@@ -80,14 +127,14 @@ func ExampleMessage() {
   // message.Header.Class: 0
   // message.Header.MagicCookie: 554869826
   // message.Header.TransactionId: [1 2 3]
-  // message.Attributes[0].Type: type
+  // message.Attributes[0].Type: 0
   // message.Attributes[0].Length: 0
   // message.Attributes[0].Value: value
-  // message.Attributes[1].Type: type
-  // message.Attributes[1].Length: 1
+  // message.Attributes[1].Type: 0
+  // message.Attributes[1].Length: 0
   // message.Attributes[1].Value: value
-  // message.Attributes[2].Type: type
-  // message.Attributes[2].Length: 2
+  // message.Attributes[2].Type: 0
+  // message.Attributes[2].Length: 0
   // message.Attributes[2].Value: value
 }
 
