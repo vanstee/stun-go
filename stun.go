@@ -3,11 +3,17 @@ package stun
 import (
   "bytes"
   "encoding/binary"
+  "errors"
   "math"
   "math/rand"
+  "net"
 )
 
 const (
+  ProtocolMask = 0xC000
+  ClassMask = 0x0110
+  MethodMask = 0x3EEF
+
   RequestClass = 0x0000
   IndicationClass = 0x0010
   SuccessResponseClass = 0x0100
@@ -16,6 +22,9 @@ const (
   BindingMethod = 0x0001
 
   MagicCookie = 0x2112A442
+
+  GoogleStunServer = "stun.l.google.com:19302"
+  MaxResponseLength = 548
 )
 
 type Header struct {
@@ -37,10 +46,6 @@ type Message struct {
   Attributes []*Attribute
 }
 
-type Response struct {
-  Message string
-}
-
 func NewHeader(class uint16) *Header {
   return &Header{
     Class: class,
@@ -49,6 +54,11 @@ func NewHeader(class uint16) *Header {
     MagicCookie: MagicCookie,
     TransactionId: generateTransactionId(),
   }
+}
+
+func (header *Header) SetType(headerType uint16) {
+  header.Class = headerType & ClassMask
+  header.Method = headerType & MethodMask
 }
 
 func (header *Header) Type() uint16 {
@@ -70,6 +80,29 @@ func (header *Header) Serialize() []byte {
   binary.Write(buffer, binary.BigEndian, header.MagicCookie)
   binary.Write(buffer, binary.BigEndian, header.TransactionId)
   return buffer.Bytes()
+}
+
+func ParseHeader(rawHeader []byte) (*Header, error) {
+  buffer := bytes.NewBuffer(rawHeader)
+  header := &Header{}
+
+  var headerType uint16
+  binary.Read(buffer, binary.BigEndian, &headerType)
+  if headerType & ProtocolMask != 0x0000 {
+    return nil, errors.New("Protocol is invalid")
+  }
+  header.SetType(headerType)
+
+  binary.Read(buffer, binary.BigEndian, &header.Length)
+
+  binary.Read(buffer, binary.BigEndian, &header.MagicCookie)
+  if header.MagicCookie != MagicCookie {
+    return nil, errors.New("MagicCookie is invalid")
+  }
+
+  binary.Read(buffer, binary.BigEndian, &header.TransactionId)
+
+  return header, nil
 }
 
 func NewAttribute(attributeType uint16, value string) *Attribute {
@@ -101,4 +134,60 @@ func (attribute *Attribute) Serialize() []byte {
   binary.Write(buffer, binary.BigEndian, attribute.Length)
   binary.Write(buffer, binary.BigEndian, attribute.ChunkedValue())
   return buffer.Bytes()
+}
+
+func ParseAttributes(rawAttributes []byte, messageLength uint16) ([]*Attribute, error) {
+  buffer := bytes.NewBuffer(rawAttributes)
+  attributes := make([]*Attribute, 1)
+
+  attribute := &Attribute{}
+  binary.Read(buffer, binary.BigEndian, &attribute.Type)
+  binary.Read(buffer, binary.BigEndian, &attribute.Length)
+
+  attributes[0] = attribute
+
+  return attributes, nil
+}
+
+func (message *Message) Serialize() []byte {
+  bytes := []byte{}
+  bytes = append(bytes, message.Header.Serialize()...)
+
+  for _, attribute := range message.Attributes {
+    bytes = append(bytes, attribute.Serialize()...)
+  }
+
+  return bytes
+}
+
+func ParseMessage(rawMessage []byte) (*Message, error) {
+  header, err := ParseHeader(rawMessage[0:20])
+  if (err != nil) { return nil, err }
+
+  attributes, err := ParseAttributes(rawMessage[20:], header.Length)
+  if (err != nil) { return nil, err }
+
+  message := &Message{
+    Header: header,
+    Attributes: attributes,
+  }
+
+  return message, nil
+}
+
+func Request(request *Message) (*Message, error) {
+  connection, err := net.Dial("udp", GoogleStunServer)
+  if (err != nil) { return nil, err }
+
+  defer connection.Close()
+
+  _, err = connection.Write(request.Serialize())
+  if (err != nil) { return nil, err }
+
+  buffer := make([]byte, MaxResponseLength)
+  _, err = connection.Read(buffer)
+  if (err != nil) { return nil, err }
+
+  response, err := ParseMessage(buffer)
+  return response, err
 }
