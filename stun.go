@@ -33,12 +33,16 @@ type Attribute struct {
 }
 
 type Message struct {
-  Header Header
-  Attributes []Attribute
+  Header *Header
+  Attributes []*Attribute
 }
 
-func NewHeader(class uint16) Header {
-  return Header{
+type Response struct {
+  Message string
+}
+
+func NewHeader(class uint16) *Header {
+  return &Header{
     Class: class,
     Method: BindingMethod,
     Length: 0,
@@ -47,7 +51,7 @@ func NewHeader(class uint16) Header {
   }
 }
 
-func (header Header) Type() uint16 {
+func (header *Header) Type() uint16 {
   return header.Class | header.Method
 }
 
@@ -59,7 +63,7 @@ func generateTransactionId() [3]uint32 {
   }
 }
 
-func (header Header) Serialize() []byte {
+func (header *Header) Serialize() []byte {
   buffer := new(bytes.Buffer)
   binary.Write(buffer, binary.BigEndian, header.Type())
   binary.Write(buffer, binary.BigEndian, header.Length)
@@ -68,15 +72,15 @@ func (header Header) Serialize() []byte {
   return buffer.Bytes()
 }
 
-func NewAttribute(attributeType uint16, value string) Attribute {
-  return Attribute{
+func NewAttribute(attributeType uint16, value string) *Attribute {
+  return &Attribute{
     Type: attributeType,
     Length: uint16(len(value)),
     Value: value,
   }
 }
 
-func (attribute Attribute) ChunkedValue() []uint32 {
+func (attribute *Attribute) ChunkedValue() []uint32 {
   sizeOfUint32 := 4
   words := int(math.Ceil(float64(len(attribute.Value)) / float64(sizeOfUint32)))
   chunks := make([]uint32, words)
@@ -91,7 +95,7 @@ func (attribute Attribute) ChunkedValue() []uint32 {
   return chunks
 }
 
-func (attribute Attribute) Serialize() []byte {
+func (attribute *Attribute) Serialize() []byte {
   buffer := new(bytes.Buffer)
   binary.Write(buffer, binary.BigEndian, attribute.Type)
   binary.Write(buffer, binary.BigEndian, attribute.Length)

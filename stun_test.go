@@ -96,10 +96,10 @@ func ExampleMessage() {
   header := NewHeader(RequestClass)
   header.TransactionId = fakeTransactionId()
 
-  attributes := make([]Attribute, 3)
+  attributes := make([]*Attribute, 3)
 
   for i := range attributes {
-    attributes[i] = Attribute{
+    attributes[i] = &Attribute{
       Type: 0,
       Length: 0,
       Value: "value",
