@@ -4,6 +4,7 @@ import (
   "bytes"
   "encoding/binary"
   "errors"
+  "fmt"
   "math/rand"
 )
 
@@ -79,6 +80,16 @@ func (header *Header) SetType(headerType uint16) {
 
 func (header *Header) Type() uint16 {
   return header.Class | header.Method
+}
+
+func (header *Header) String() string {
+  var buffer bytes.Buffer
+  buffer.WriteString(fmt.Sprintf("Class: %d\n", header.Class))
+  buffer.WriteString(fmt.Sprintf("Method: %d\n", header.Method))
+  buffer.WriteString(fmt.Sprintf("Length: %d\n", header.Length))
+  buffer.WriteString(fmt.Sprintf("MagicCookie: %d\n", header.MagicCookie))
+  buffer.WriteString(fmt.Sprintf("TransactionId: %d\n", header.TransactionId))
+  return buffer.String()
 }
 
 func generateTransactionId() [3]uint32 {

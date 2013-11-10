@@ -7,31 +7,31 @@ import (
 )
 
 func TestNewAttribute(t *testing.T) {
-  attribute := NewAttribute(0, "value")
+  mappedAddress := NewMappedAddress(IPv4, 19302, 134744072)
+  attribute := NewAttribute(1, mappedAddress)
 
-  if attributeType := attribute.Type; attributeType != 0 {
-    t.Errorf(`attribute.Type  = %d, want 0`, attributeType)
+  if attributeType := attribute.Type; attributeType != 1 {
+    t.Errorf(`attribute.Type  = %d, want 1`, attributeType)
   }
 
   if length := attribute.Length; length != 5 {
     t.Errorf(`attribute.Length = %d, want 5`, length)
   }
 
-  if value := attribute.Value; value != "value" {
-    t.Errorf(`attribute.Value = %s, want "value"`, value)
+  if value := attribute.Value; value != mappedAddress {
+    t.Errorf(`attribute.Value = %s, want %s`, value, mappedAddress.String())
   }
 }
 
 func TestSerializeAttribute(t *testing.T) {
-  attribute := NewAttribute(0, "This is a value")
+  mappedAddress := NewMappedAddress(IPv4, 19302, 134744072)
+  attribute := NewAttribute(1, mappedAddress)
   buffer := attribute.Serialize()
 
   matching_buffer := []byte{
-      0,   0,   0,  15, // Type, Length
-    115, 105, 104,  84, // Value
-     32, 115, 105,  32,
-     97, 118,  32,  97,
-      0, 101, 117, 108,
+      0,   1,   0,   5, // Type, Length
+      1,  75, 102,   8, // Value
+      8,   8,   8,
   }
 
   if !bytes.Equal(buffer, matching_buffer) {
