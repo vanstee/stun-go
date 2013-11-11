@@ -2,15 +2,17 @@ package stun
 
 import (
 	"net"
+	"time"
 )
 
 const (
-	GoogleStunServer  = "stun.l.google.com:19302"
-	MaxResponseLength = 548
+	GoogleStunServer           = "stun.l.google.com:19302"
+	MaxResponseLength          = 548
+	RequestTimeoutMilliseconds = 500
 )
 
 func Request(request *Message) (*Message, error) {
-	connection, err := net.Dial("udp", GoogleStunServer)
+	connection, err := net.DialTimeout("udp", GoogleStunServer, RequestTimeout())
 	if err != nil {
 		return nil, err
 	}
@@ -29,4 +31,8 @@ func Request(request *Message) (*Message, error) {
 	}
 
 	return ParseMessage(buffer)
+}
+
+func RequestTimeout() time.Duration {
+	return time.Duration(RequestTimeoutMilliseconds) * time.Millisecond
 }
