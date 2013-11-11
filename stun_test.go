@@ -5,6 +5,39 @@ import (
   . "stun"
 )
 
+func ExampleRequest() {
+  header := NewHeader(RequestClass)
+
+  message := &Message{
+    Header: header,
+    Attributes: []*Attribute{},
+  }
+
+  responseMessage, err := Request(message)
+
+  if(err != nil) {
+    fmt.Printf(err.Error())
+  } else {
+    fmt.Printf(responseMessage.String())
+  }
+
+  // Output:
+  // Message:
+  // Header:
+  // Class: 0
+  // Method: 1
+  // Length: 0
+  // MagicCookie: 554869826
+  // TransactionId: [1 2 3]
+  // Attributes[0]:
+  // Type: 1
+  // Length: 5
+  // Value:
+  // Family: 1
+  // Port: 19302
+  // Address: 134744072
+}
+
 func ExampleMessage() {
   header := NewHeader(RequestClass)
   header.TransactionId = fakeTransactionId()
