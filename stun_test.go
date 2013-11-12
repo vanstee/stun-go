@@ -11,14 +11,7 @@ import (
 )
 
 func TestRequest(t *testing.T) {
-	header := NewHeader(RequestClass)
-
-	message := &Message{
-		Header:     header,
-		Attributes: []*Attribute{},
-	}
-
-	responseMessage, err := Request(message)
+	responseMessage, err := Request()
 	if err != nil {
 		t.Errorf(err.Error())
 	}

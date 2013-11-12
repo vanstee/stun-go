@@ -4,12 +4,7 @@ STUN implementation in Go
 ![](https://travis-ci.org/vanstee/stun-go.png)
 
 ```go
-message := &Message{
-  Header: NewHeader(RequestClass),
-  Attributes: []*Attribute{},
-}
-
-responseMessage, err := Request(message)
+responseMessage, err := Request()
 if err != nil {
   fmt.Fatal(err.Error())
 }

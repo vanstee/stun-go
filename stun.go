@@ -11,7 +11,16 @@ const (
 	RequestTimeoutMilliseconds = 500
 )
 
-func Request(request *Message) (*Message, error) {
+func Request() (*Message, error) {
+  message := &Message{
+    Header: NewHeader(RequestClass),
+    Attributes: []*Attribute{},
+  }
+
+  return RequestMessage(message)
+}
+
+func RequestMessage(request *Message) (*Message, error) {
 	connection, err := net.DialTimeout("udp", GoogleStunServer, RequestTimeout())
 	if err != nil {
 		return nil, err
