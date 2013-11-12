@@ -1,11 +1,17 @@
 package stun_test
 
 import (
+	"encoding/binary"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"strings"
 	. "stun"
+	"testing"
 )
 
-func ExampleRequest() {
+func TestRequest(t *testing.T) {
 	header := NewHeader(RequestClass)
 
 	message := &Message{
@@ -14,28 +20,38 @@ func ExampleRequest() {
 	}
 
 	responseMessage, err := Request(message)
-
 	if err != nil {
-		fmt.Printf(err.Error())
-	} else {
-		fmt.Printf(responseMessage.String())
+		t.Errorf(err.Error())
 	}
 
-	// Output:
-	// Message:
-	// Header:
-	// Class: 0
-	// Method: 1
-	// Length: 0
-	// MagicCookie: 554869826
-	// TransactionId: [1 2 3]
-	// Attributes[0]:
-	// Type: 1
-	// Length: 5
-	// Value:
-	// Family: 1
-	// Port: 19302
-	// Address: 134744072
+	attributeValue := responseMessage.Attributes[0].Value
+	mappedAddress, ok := attributeValue.(*MappedAddress)
+
+	if !ok {
+		t.Errorf(`responseMessage.Attributes[0] was expected to be of type MappedAddress`)
+	}
+
+	address := make([]byte, 4)
+	binary.BigEndian.PutUint32(address, mappedAddress.Address)
+
+	formattedAddress := net.IPv4(address[0], address[1], address[2], address[3]).String()
+
+	response, err := http.Get("http://icanhazip.com")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	matchingAddress, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	formattedMatchingAddress := strings.TrimSpace(string(matchingAddress))
+
+	if formattedAddress != formattedMatchingAddress {
+		t.Errorf(`formattedAddress = "%s", want "%s"`, formattedAddress, formattedMatchingAddress)
+	}
 }
 
 func ExampleMessage() {

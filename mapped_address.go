@@ -47,18 +47,18 @@ func ParseMappedAddress(rawMappedAddress []byte) (*MappedAddress, error) {
 	mappedAddress := &MappedAddress{}
 
 	var alignment uint8
-	binary.Read(buffer, binary.LittleEndian, &alignment)
+	binary.Read(buffer, binary.BigEndian, &alignment)
 	if alignment != 0x00 {
 		return nil, errors.New("Mapped address padding is not empty")
 	}
 
-	binary.Read(buffer, binary.LittleEndian, &mappedAddress.Family)
+	binary.Read(buffer, binary.BigEndian, &mappedAddress.Family)
 	if mappedAddress.Family != IPv4 {
 		return nil, errors.New("Mapped address family is invalid")
 	}
 
-	binary.Read(buffer, binary.LittleEndian, &mappedAddress.Port)
-	binary.Read(buffer, binary.LittleEndian, &mappedAddress.Address)
+	binary.Read(buffer, binary.BigEndian, &mappedAddress.Port)
+	binary.Read(buffer, binary.BigEndian, &mappedAddress.Address)
 
 	return mappedAddress, nil
 }

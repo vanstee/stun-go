@@ -25,10 +25,12 @@ func Request(request *Message) (*Message, error) {
 	}
 
 	buffer := make([]byte, MaxResponseLength)
-	_, err = connection.Read(buffer)
+	readBytes, err := connection.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
+
+	buffer = buffer[0:readBytes]
 
 	return ParseMessage(buffer)
 }
