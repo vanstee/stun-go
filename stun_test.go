@@ -1,4 +1,4 @@
-package stun_test
+package stun
 
 import (
 	"encoding/binary"
@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	. "stun"
 	"testing"
 )
 

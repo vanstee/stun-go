@@ -1,7 +1,6 @@
-package stun_test
+package stun
 
 import (
-	. "stun"
 	"testing"
 )
 
