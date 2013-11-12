@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"net"
 )
 
 const (
@@ -23,6 +24,13 @@ func NewMappedAddress(family uint8, port uint16, address uint32) *MappedAddress 
 		Port:    port,
 		Address: address,
 	}
+}
+
+func (mappedAddress *MappedAddress) IPAddress() net.IP {
+	address := make([]byte, 4)
+	binary.BigEndian.PutUint32(address, mappedAddress.Address)
+	ipAddress := net.IPv4(address[0], address[1], address[2], address[3])
+	return ipAddress
 }
 
 func (mappedAddress *MappedAddress) Length() uint16 {
