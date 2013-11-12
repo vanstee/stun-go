@@ -27,3 +27,5 @@ fmt.Printf("Your public IP address is %s\n", formattedAddress)
 // Output:
 // Your public IP address is 8.8.8.8
 ```
+
+Based on [RFC5389](http://tools.ietf.org/html/rfc5389).
