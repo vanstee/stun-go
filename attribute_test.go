@@ -29,9 +29,9 @@ func TestSerializeAttribute(t *testing.T) {
 	buffer := attribute.Serialize()
 
 	matchingBuffer := []byte{
-		0, 1, 0, 5, // Type, Length
-		1, 75, 102, 8, // Value
-		8, 8, 8,
+		0x00, 0x01, 0x00, 0x05, // Type, Length
+		0x01, 0x4B, 0x66, 0x08, // Value
+		0x08, 0x08, 0x08,
 	}
 
 	if !bytes.Equal(buffer, matchingBuffer) {

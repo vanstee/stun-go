@@ -32,11 +32,11 @@ func TestSerializeHeader(t *testing.T) {
 	buffer := header.Serialize()
 
 	matchingBuffer := []byte{
-		0, 1, 0, 0, // Class | Method, Length
-		33, 18, 164, 66, // MagicCookie
-		0, 0, 0, 1, // TransactionId
-		0, 0, 0, 2,
-		0, 0, 0, 3,
+		0x00, 0x01, 0x00, 0x00, // Class | Method, Length
+		0x21, 0x12, 0xA4, 0x42, // MagicCookie
+		0x00, 0x00, 0x00, 0x01, // TransactionId
+		0x00, 0x00, 0x00, 0x02,
+		0x00, 0x00, 0x00, 0x03,
 	}
 
 	if !bytes.Equal(buffer, matchingBuffer) {
