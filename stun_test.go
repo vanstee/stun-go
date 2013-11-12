@@ -1,7 +1,6 @@
 package stun
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -9,6 +8,22 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestRequestPublicAddress(t *testing.T) {
+	ipAddress, err := RequestPublicIPAddress()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	matchingIPAddress, err := publicIPAddress()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if !ipAddress.Equal(matchingIPAddress) {
+		t.Errorf(`ipAddress = "%s", want "%s"`, ipAddress, matchingIPAddress)
+	}
+}
 
 func TestRequest(t *testing.T) {
 	responseMessage, err := Request()
@@ -18,31 +33,19 @@ func TestRequest(t *testing.T) {
 
 	attributeValue := responseMessage.Attributes[0].Value
 	mappedAddress, ok := attributeValue.(*MappedAddress)
-
 	if !ok {
-		t.Errorf(`responseMessage.Attributes[0] was expected to be of type MappedAddress`)
+		t.Errorf(`Attribute was expected to be of type MappedAddress`)
 	}
 
-	address := make([]byte, 4)
-	binary.BigEndian.PutUint32(address, mappedAddress.Address)
+	ipAddress := mappedAddress.IPAddress()
 
-	formattedAddress := net.IPv4(address[0], address[1], address[2], address[3]).String()
-
-	response, err := http.Get("http://icanhazip.com")
+	matchingIPAddress, err := publicIPAddress()
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 
-	matchingAddress, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-
-	formattedMatchingAddress := strings.TrimSpace(string(matchingAddress))
-
-	if formattedAddress != formattedMatchingAddress {
-		t.Errorf(`formattedAddress = "%s", want "%s"`, formattedAddress, formattedMatchingAddress)
+	if !ipAddress.Equal(matchingIPAddress) {
+		t.Errorf(`ipAddress = "%s", want "%s"`, ipAddress, matchingIPAddress)
 	}
 }
 
@@ -78,6 +81,23 @@ func ExampleMessage() {
 	// Family: 1
 	// Port: 19302
 	// Address: 134744072
+}
+
+func publicIPAddress() (net.IP, error) {
+	response, err := http.Get("http://icanhazip.com")
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	cleanAddress := strings.TrimSpace(string(address))
+	ip := net.ParseIP(cleanAddress)
+	return ip, nil
 }
 
 func fakeTransactionId() [3]uint32 {

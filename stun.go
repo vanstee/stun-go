@@ -1,6 +1,7 @@
 package stun
 
 import (
+	"errors"
 	"net"
 	"time"
 )
@@ -11,13 +12,28 @@ const (
 	RequestTimeoutMilliseconds = 500
 )
 
-func Request() (*Message, error) {
-  message := &Message{
-    Header: NewHeader(RequestClass),
-    Attributes: []*Attribute{},
-  }
+func RequestPublicIPAddress() (net.IP, error) {
+	responseMessage, err := Request()
+	if err != nil {
+		return nil, err
+	}
 
-  return RequestMessage(message)
+	attributeValue := responseMessage.Attributes[0].Value
+	mappedAddress, ok := attributeValue.(*MappedAddress)
+	if !ok {
+		return nil, errors.New("Attribute was expected to be of type MappedAddress")
+	}
+
+	return mappedAddress.IPAddress(), nil
+}
+
+func Request() (*Message, error) {
+	message := &Message{
+		Header:     NewHeader(RequestClass),
+		Attributes: []*Attribute{},
+	}
+
+	return RequestMessage(message)
 }
 
 func RequestMessage(request *Message) (*Message, error) {
